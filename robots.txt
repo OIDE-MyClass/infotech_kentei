@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: https://oide-myclass.github.io/infotech_kentei/sitemap.xml
