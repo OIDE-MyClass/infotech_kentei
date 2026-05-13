@@ -1,6 +1,28 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script type="text/javascript">
+  // URLに「p=」が含まれていたら、元のパスへ書き換える
+  (function(l) {
+    if (l.search[1] === 'p') {
+      var p = l.search.slice(1).split('&').filter(function(s) {
+        return s.slice(0, 2) === 'p=';
+      })[0].replace(/p=/, '').replace(/~and~/g, '&');
+      if (p !== l.pathname.slice(1)) {
+        window.history.replaceState(null, null,
+          l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+          l.pathname.split('/').slice(0, 1 + (p.slice(0,1) === '/' ? 0 : 0)).join('/') + '/' + p +
+          (l.search.slice(1).split('&').filter(function(s) {
+            return s.slice(0, 2) !== 'p=';
+          }).join('&') !== '' ? '?' + l.search.slice(1).split('&').filter(function(s) {
+            return s.slice(0, 2) !== 'p=';
+          }).join('&').replace(/~and~/g, '&') : '') +
+          l.hash
+        );
+      }
+    }
+  }(window.location));
+</script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/infotech_kentei/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
