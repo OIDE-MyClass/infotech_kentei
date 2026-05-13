@@ -1,23 +1,22 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/infotech_kentei/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>quiz-app</title>
-    <script type="module" crossorigin src="/infotech_kentei/assets/index-syVmRyro.js"></script>
-    <link rel="stylesheet" crossorigin href="/infotech_kentei/assets/index-DI9U7IE8.css">
-  </head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-V0KSCS2553"></script>
-  <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+      // 現在のURL情報をクエリパラメータに変換してindex.htmlにリダイレクト
+      var pathSegmentsToKeep = 0; // カスタムドメインなら0、ユーザー名.github.io/repo名/ なら1
 
-  gtag('config', 'G-V0KSCS2553');
-  </script>
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?p=' +
+        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+        (l.search ? '&q=' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash
+      );
+    </script>
+  </head>
   <body>
-    <div id="root"></div>
   </body>
 </html>
