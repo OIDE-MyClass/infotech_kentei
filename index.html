@@ -114,11 +114,25 @@
 
     <!-- 4. サブカテゴリ選択画面 -->
     <div id="view-subcategory" class="hidden space-y-6 animate-fade-in">
-      <div class="flex items-center gap-4 mb-6">
+      <div class="flex items-center gap-4 mb-4">
         <div id="subcat-header-icon" class="bg-blue-100 p-3.5 rounded-2xl text-blue-600">
           <!-- JSでアイコン挿入 -->
         </div>
         <h2 id="subcat-header-title" class="text-2xl font-bold text-slate-800"></h2>
+      </div>
+
+      <!-- 出題大問数の指定パネル -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-600"></i>
+            出題する大問数の指定
+          </span>
+          <span class="text-xs text-slate-400">ランダムに抽出されます</span>
+        </div>
+        <div id="limit-selector" class="grid grid-cols-5 gap-2">
+          <!-- JSでボタン生成 -->
+        </div>
       </div>
       
       <div id="subcategory-list" class="grid gap-3">
@@ -195,6 +209,9 @@
       </div>
 
       <div class="space-y-3">
+        <button id="btn-restart-wrong" onclick="restartWrongQuiz()" class="hidden w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg transition-all active:scale-[0.98]">
+          間違えた大問だけ復習する
+        </button>
         <button onclick="restartSameQuiz()" class="w-full py-4 bg-slate-800 text-white font-bold rounded-xl shadow-md hover:bg-slate-700 hover:shadow-lg transition-all active:scale-[0.98]">
           同じ問題をもう一度解く
         </button>
@@ -210,7 +227,7 @@
     // =========================================================================
     // 🚨 ここにGASで取得した「ウェブアプリのURL（末尾が /exec）」を貼り付けます
     // =========================================================================
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxLv8FLUrq6EgcnMjezL_JzK7x7RS1MCfoOAI9KTb2TMZgS846tocVCtmj5RFavva4Q/exec";
+    const GAS_URL = "YOUR_WEB_APP_URL";
 
     // 解答記号の一覧
     const KANA_BANK = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク', 'ケ', 'コ', 'サ', 'シ', 'ス', 'セ', 'ソ', 'タ', 'チ', 'ツ', 'テ', 'ト'];
@@ -275,7 +292,9 @@
       currentView: 'loading',
       selectedMainCategory: null,
       selectedSubCategory: null,
+      selectedQuestionLimit: 'all',
       taskSets: [],
+      wrongTasks: [],
       currentTaskIndex: 0,
       userAnswers: [],
       isSubmitted: false,
@@ -420,18 +439,65 @@
       document.getElementById('subcat-header-icon').innerHTML = `<i data-lucide="${iconName}" class="w-7 h-7"></i>`;
       document.getElementById('subcat-header-title').textContent = catName;
 
+      renderLimitSelector();
+      renderSubCategoryList();
+      switchView('subcategory');
+    }
+
+    // 出題大問数セレクターの描画
+    function renderLimitSelector() {
+      const options = [
+        { value: 'all', label: 'すべて' },
+        { value: 1, label: '1問' },
+        { value: 2, label: '2問' },
+        { value: 3, label: '3問' },
+        { value: 5, label: '5問' }
+      ];
+
+      const selectorEl = document.getElementById('limit-selector');
+      selectorEl.innerHTML = options.map(opt => {
+        const isSelected = state.selectedQuestionLimit === opt.value;
+        const btnClass = isSelected
+          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100';
+        const arg = opt.value === 'all' ? "'all'" : opt.value;
+        return `
+          <button onclick="setQuestionLimit(${arg})" class="py-2 px-1 rounded-xl text-xs md:text-sm font-bold border transition-all ${btnClass}">
+            ${opt.label}
+          </button>
+        `;
+      }).join('');
+    }
+
+    // 出題大問数の変更
+    function setQuestionLimit(limit) {
+      state.selectedQuestionLimit = limit;
+      renderLimitSelector();
+      renderSubCategoryList();
+    }
+
+    // サブカテゴリ一覧の描画
+    function renderSubCategoryList() {
+      const catName = state.selectedMainCategory;
       const subCats = Object.keys(state.quizData[catName]);
       const subcatListEl = document.getElementById('subcategory-list');
 
       subcatListEl.innerHTML = subCats.map(subName => {
         const sets = state.quizData[catName][subName];
         const qCount = sets.reduce((acc, set) => acc + set.questions.length, 0);
+        
+        let badgeText = `大問${sets.length}つ (全${qCount}問)`;
+        if (state.selectedQuestionLimit !== 'all') {
+          const actualCount = Math.min(sets.length, Number(state.selectedQuestionLimit));
+          badgeText = `${actualCount}問出題 / 全${sets.length}大問`;
+        }
+
         return `
           <button onclick="selectSubCategory('${escapeHtml(subName)}')" class="flex items-center justify-between p-5 bg-white rounded-xl shadow-sm border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all text-left group">
             <span class="font-semibold text-base md:text-lg text-slate-700 group-hover:text-blue-700">${escapeHtml(subName)}</span>
             <div class="flex items-center gap-2 flex-shrink-0 ml-2">
               <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full group-hover:bg-blue-200 group-hover:text-blue-800 transition-colors">
-                大問${sets.length}つ (全${qCount}問)
+                ${badgeText}
               </span>
               <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400 group-hover:text-blue-500"></i>
             </div>
@@ -439,13 +505,18 @@
         `;
       }).join('');
 
-      switchView('subcategory');
+      lucide.createIcons();
     }
 
     // --- サブカテゴリ選択（通常学習の開始） ---
     function selectSubCategory(subName) {
       const originalSets = state.quizData[state.selectedMainCategory][subName];
-      const shuffledSets = shuffleArray(originalSets);
+      let shuffledSets = shuffleArray(originalSets);
+
+      // 指定された大問数で絞り込み
+      if (state.selectedQuestionLimit !== 'all') {
+        shuffledSets = shuffledSets.slice(0, Number(state.selectedQuestionLimit));
+      }
 
       state.selectedSubCategory = subName;
       state.taskSets = shuffledSets;
@@ -481,6 +552,9 @@
 
     // --- 大問の初期化と描画 ---
     function initTask(index) {
+      if (index === 0) {
+        state.wrongTasks = [];
+      }
       state.currentTaskIndex = index;
       const currentTask = state.taskSets[index];
       state.userAnswers = new Array(currentTask.questions.length).fill(null);
@@ -665,6 +739,11 @@
         }
       });
 
+      // 1問でも間違いがあった大問を復習リストに保存
+      if (correctCount < currentTask.questions.length) {
+        state.wrongTasks.push(currentTask);
+      }
+
       state.score += correctCount;
       renderQuestions();
       updateActionButtons();
@@ -693,7 +772,29 @@
         scoreEl.className = "text-blue-600";
       }
 
+      // 間違えた大問がある場合のみ復習ボタンを表示
+      const wrongBtn = document.getElementById('btn-restart-wrong');
+      if (state.wrongTasks.length > 0) {
+        wrongBtn.classList.remove('hidden');
+        wrongBtn.innerHTML = `
+          <i data-lucide="rotate-ccw" class="w-5 h-5 inline-block mr-1.5 -mt-0.5"></i>
+          間違えた大問だけ復習する（${state.wrongTasks.length}問）
+        `;
+      } else {
+        wrongBtn.classList.add('hidden');
+      }
+
       switchView('result');
+    }
+
+    // 間違えた大問だけを解きなおす
+    function restartWrongQuiz() {
+      if (state.wrongTasks.length === 0) return;
+      state.taskSets = [...state.wrongTasks];
+      state.score = 0;
+      state.totalQuestionsCount = state.taskSets.reduce((acc, set) => acc + set.questions.length, 0);
+      initTask(0);
+      switchView('quiz');
     }
 
     // 結果画面からのアクション
