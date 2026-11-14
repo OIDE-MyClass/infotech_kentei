@@ -23,6 +23,12 @@
     .animate-fade-in {
       animation: fadeIn 0.35s ease-out forwards;
     }
+    /* PC・タブレット横向きでは解答群の折りたたみを自動解除して常時表示 */
+    @media (min-width: 1024px) {
+      #quiz-wordbank.hidden {
+        display: grid !important;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800 selection:bg-blue-200 flex flex-col">
@@ -46,10 +52,10 @@
   </header>
 
   <!-- メインコンテンツ -->
-  <main class="max-w-3xl mx-auto p-4 md:p-6 flex-grow w-full pb-24">
+  <main class="max-w-6xl mx-auto p-4 md:p-6 flex-grow w-full pb-24">
     
     <!-- デモモード通知バナー（GAS_URL未設定時のみ表示） -->
-    <div id="demo-banner" class="hidden mb-6 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-xs md:text-sm flex items-start gap-3">
+    <div id="demo-banner" class="hidden max-w-3xl mx-auto mb-6 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-xs md:text-sm flex items-start gap-3">
       <i data-lucide="info" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"></i>
       <div>
         <p class="font-bold">現在は動作確認用のサンプル問題を表示しています</p>
@@ -58,13 +64,13 @@
     </div>
 
     <!-- 1. 読み込み中画面 -->
-    <div id="view-loading" class="py-24 flex flex-col items-center justify-center text-slate-500">
+    <div id="view-loading" class="max-w-3xl mx-auto py-24 flex flex-col items-center justify-center text-slate-500">
       <i data-lucide="loader-2" class="w-10 h-10 animate-spin mb-4 text-blue-500"></i>
       <p class="font-bold">問題データを読み込み中...</p>
     </div>
 
     <!-- 2. エラー画面 -->
-    <div id="view-error" class="hidden py-20 flex flex-col items-center justify-center p-6 text-center bg-white rounded-2xl border border-red-100 shadow-sm">
+    <div id="view-error" class="hidden max-w-3xl mx-auto py-20 flex flex-col items-center justify-center p-6 text-center bg-white rounded-2xl border border-red-100 shadow-sm">
       <i data-lucide="alert-circle" class="w-12 h-12 text-red-500 mb-4"></i>
       <p class="font-bold text-slate-700 text-lg mb-2">データの読み込みに失敗しました</p>
       <p id="error-message" class="text-sm text-slate-500 mb-6"></p>
@@ -74,7 +80,7 @@
     </div>
 
     <!-- 3. ホーム画面 -->
-    <div id="view-home" class="hidden space-y-8 animate-fade-in">
+    <div id="view-home" class="hidden max-w-3xl mx-auto space-y-8 animate-fade-in">
       <div class="text-center py-6 bg-blue-50 rounded-2xl border border-blue-100">
         <h2 class="text-xl font-bold text-blue-800 mb-2">スキマ時間で合格を目指そう！</h2>
         <p class="text-sm text-blue-600 px-4 leading-relaxed">
@@ -113,7 +119,7 @@
     </div>
 
     <!-- 4. サブカテゴリ選択画面 -->
-    <div id="view-subcategory" class="hidden space-y-6 animate-fade-in">
+    <div id="view-subcategory" class="hidden max-w-3xl mx-auto space-y-6 animate-fade-in">
       <div class="flex items-center gap-4 mb-4">
         <div id="subcat-header-icon" class="bg-blue-100 p-3.5 rounded-2xl text-blue-600">
           <!-- JSでアイコン挿入 -->
@@ -121,26 +127,7 @@
         <h2 id="subcat-header-title" class="text-2xl font-bold text-slate-800"></h2>
       </div>
 
-      <!-- 出題大問数の指定パネル -->
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="flex items-center justify-between mb-2.5">
-          <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-600"></i>
-            出題する大問数の指定
-          </span>
-          <span class="text-xs text-slate-400">ランダムに抽出されます</span>
-        </div>
-        <div id="limit-selector" class="grid grid-cols-5 gap-2">
-          <!-- JSでボタン生成 -->
-        </div>
-      </div>
-      
-      <div id="subcategory-list" class="grid gap-3">
-        <!-- JSで動的に生成 -->
-      </div>
-    </div>
-
-    <!-- 5. クイズ出題画面 -->
+    <!-- 5. クイズ出題画面（スマホ：上部追従 / PC・タブレット横向き：左右2カラム固定） -->
     <div id="view-quiz" class="hidden w-full animate-fade-in">
       <!-- 進捗バー・ヘッダー -->
       <div class="mb-4 flex justify-between items-end">
@@ -150,51 +137,63 @@
         </span>
       </div>
 
-      <!-- 大問の説明文 -->
-      <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 shadow-sm">
-        <p id="quiz-description" class="font-bold text-blue-900 leading-relaxed text-sm md:text-base whitespace-pre-wrap"></p>
-      </div>
+      <!-- レスポンシブ2カラムグリッド -->
+      <div class="lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start">
+        
+        <!-- 左カラム上部：大問の説明・図・長文 -->
+        <div class="lg:col-span-7 lg:col-start-1">
+          <!-- 大問の説明文 -->
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 shadow-sm">
+            <p id="quiz-description" class="font-bold text-blue-900 leading-relaxed text-sm md:text-base whitespace-pre-wrap"></p>
+          </div>
 
-      <!-- 図・画像の表示枠 -->
-      <div id="quiz-image-container" class="hidden mb-6 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-3 text-center">
-        <img id="quiz-image" src="" alt="問題の図" referrerpolicy="no-referrer" class="max-w-full h-auto mx-auto rounded-lg object-contain bg-slate-50" style="max-height: 300px;">
-      </div>
+          <!-- 図・画像の表示枠 -->
+          <div id="quiz-image-container" class="hidden mb-6 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white p-3 text-center">
+            <img id="quiz-image" src="" alt="問題の図" referrerpolicy="no-referrer" class="max-w-full h-auto mx-auto rounded-lg object-contain bg-slate-50" style="max-height: 300px;">
+          </div>
 
-      <!-- 長文テキストの表示枠 -->
-      <div id="quiz-passage-container" class="hidden bg-white p-5 rounded-xl border border-slate-300 mb-6 shadow-sm">
-        <p id="quiz-passage" class="text-slate-700 font-medium leading-loose text-sm md:text-base whitespace-pre-wrap tracking-wide"></p>
-      </div>
-
-      <!-- 解答群（スクロール追従） -->
-      <div id="quiz-wordbank-wrapper" class="sticky top-16 z-10 bg-white/95 backdrop-blur-sm p-3.5 md:p-4 rounded-xl border border-blue-200 mb-6 shadow-md transition-all">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-2.5">
-          <h4 class="text-xs font-bold text-blue-700 flex items-center gap-1.5">
-            <i data-lucide="pin" class="w-3.5 h-3.5"></i>
-            <span>【解答群】</span>
-          </h4>
-          <button type="button" onclick="toggleWordbank()" id="btn-toggle-wordbank" class="text-xs font-bold text-slate-500 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1">
-            <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
-            <span>たたむ</span>
-          </button>
+          <!-- 長文テキストの表示枠 -->
+          <div id="quiz-passage-container" class="hidden bg-white p-5 rounded-xl border border-slate-300 mb-6 shadow-sm">
+            <p id="quiz-passage" class="text-slate-700 font-medium leading-loose text-sm md:text-base whitespace-pre-wrap tracking-wide"></p>
+          </div>
         </div>
-        <div id="quiz-wordbank" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-2 max-h-36 sm:max-h-48 overflow-y-auto pr-1">
-          <!-- JSで動的に生成 -->
+
+        <!-- 右カラム（PC・タブレット横向き）/ 上部追従（スマホ）：解答群 -->
+        <div id="quiz-wordbank-wrapper" class="sticky top-16 lg:top-20 z-10 lg:col-span-5 lg:col-start-8 lg:row-start-1 lg:row-span-2 bg-white/95 backdrop-blur-sm p-3.5 md:p-5 rounded-xl border border-blue-200 mb-6 lg:mb-0 shadow-md transition-all">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+            <h4 class="text-xs md:text-sm font-bold text-blue-700 flex items-center gap-1.5">
+              <i data-lucide="pin" class="w-4 h-4"></i>
+              <span>【解答群】</span>
+            </h4>
+            <span class="hidden lg:inline text-[11px] text-slate-400">選択済みの記号は色が変わります</span>
+            <button type="button" onclick="toggleWordbank()" id="btn-toggle-wordbank" class="lg:hidden text-xs font-bold text-slate-500 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1">
+              <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+              <span>たたむ</span>
+            </button>
+          </div>
+          <div id="quiz-wordbank" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-2 gap-2 max-h-36 sm:max-h-48 lg:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1">
+            <!-- JSで動的に生成 -->
+          </div>
         </div>
-      </div>
 
-      <!-- 小問リスト -->
-      <div id="quiz-questions-list" class="space-y-6 mb-8">
-        <!-- JSで動的に生成 -->
-      </div>
+        <!-- 左カラム下部：小問リストとアクションボタン -->
+        <div class="lg:col-span-7 lg:col-start-1">
+          <!-- 小問リスト -->
+          <div id="quiz-questions-list" class="space-y-6 mb-8">
+            <!-- JSで動的に生成 -->
+          </div>
 
-      <!-- アクションボタン（採点 / 次へ） -->
-      <div class="mb-8">
-        <button id="btn-submit" onclick="submitAnswers()" disabled class="w-full py-4 rounded-xl font-bold text-lg shadow-md transition-all bg-slate-200 text-slate-400 cursor-not-allowed">
-          すべての記号を選択してください
-        </button>
-        <button id="btn-next" onclick="nextTask()" class="hidden w-full py-4 bg-slate-800 text-white rounded-xl font-bold text-lg shadow-md hover:bg-slate-700 active:scale-[0.98] transition-all">
-          次の大問へ進む
-        </button>
+          <!-- アクションボタン（採点 / 次へ） -->
+          <div class="mb-8">
+            <button id="btn-submit" onclick="submitAnswers()" disabled class="w-full py-4 rounded-xl font-bold text-lg shadow-md transition-all bg-slate-200 text-slate-400 cursor-not-allowed">
+              すべての記号を選択してください
+            </button>
+            <button id="btn-next" onclick="nextTask()" class="hidden w-full py-4 bg-slate-800 text-white rounded-xl font-bold text-lg shadow-md hover:bg-slate-700 active:scale-[0.98] transition-all">
+              次の大問へ進む
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -585,44 +584,44 @@
       // 画像の表示制御
       const imgContainer = document.getElementById('quiz-image-container');
       const imgEl = document.getElementById('quiz-image');
-      if (currentTask.imageUrl) {
-        imgContainer.innerHTML = `
-          <img id="quiz-image" src="${escapeHtml(formatImageUrl(currentTask.imageUrl))}" alt="問題の図" referrerpolicy="no-referrer" 
-            class="max-w-full h-auto mx-auto rounded-lg object-contain bg-slate-50" style="max-height: 300px;"
-            onerror="this.parentElement.innerHTML='<div class=\\'p-4 text-red-500 text-sm\\'>画像の読み込みに失敗しました（共有設定を確認してください）</div>'">
-        `;
-        imgContainer.classList.remove('hidden');
-      } else {
-        imgContainer.classList.add('hidden');
-      }
-
-      // 長文の表示制御
-      const passageContainer = document.getElementById('quiz-passage-container');
-      if (currentTask.passage) {
-        document.getElementById('quiz-passage').textContent = currentTask.passage;
-        passageContainer.classList.remove('hidden');
-      } else {
-        passageContainer.classList.add('hidden');
-      }
-
-      // 解答群の描画
+      // 解答群の初期化と描画
       const wordBankEl = document.getElementById('quiz-wordbank');
       const toggleBtn = document.getElementById('btn-toggle-wordbank');
       wordBankEl.classList.remove('hidden');
       if (toggleBtn) {
         toggleBtn.innerHTML = `<i data-lucide="chevron-up" class="w-3.5 h-3.5"></i><span>たたむ</span>`;
       }
-      wordBankEl.innerHTML = currentTask.wordBank.map((word, idx) => `
-        <div class="flex items-start gap-1.5 text-sm md:text-base">
-          <span class="font-bold text-blue-600 w-5 flex-shrink-0">${KANA_BANK[idx]}.</span>
-          <span class="text-slate-700 leading-snug">${escapeHtml(word)}</span>
-        </div>
-      `).join('');
+      renderWordbank();
 
       // 小問とボタンの描画
       renderQuestions();
       updateActionButtons();
       lucide.createIcons();
+    }
+
+    // 解答群の描画（選択済み記号のハイライト対応）
+    function renderWordbank() {
+      const currentTask = state.taskSets[state.currentTaskIndex];
+      const wordBankEl = document.getElementById('quiz-wordbank');
+      const usedKanas = new Set(state.userAnswers.filter(Boolean));
+
+      wordBankEl.innerHTML = currentTask.wordBank.map((word, idx) => {
+        const kana = KANA_BANK[idx];
+        const isUsed = usedKanas.has(kana);
+        const itemClass = isUsed
+          ? 'bg-blue-50/90 border-blue-200 text-slate-500'
+          : 'bg-slate-50/60 border-transparent text-slate-700';
+
+        return `
+          <div class="flex items-start justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm md:text-base transition-colors ${itemClass}">
+            <div class="flex items-start gap-1.5">
+              <span class="font-bold ${isUsed ? 'text-blue-400' : 'text-blue-600'} w-5 flex-shrink-0">${kana}.</span>
+              <span class="leading-snug">${escapeHtml(word)}</span>
+            </div>
+            ${isUsed ? `<i data-lucide="check" class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5"></i>` : ''}
+          </div>
+        `;
+      }).join('');
     }
 
     // 解答群の折りたたみ切り替え
@@ -725,6 +724,7 @@
     function selectAnswer(qIndex, kana) {
       if (state.isSubmitted) return;
       state.userAnswers[qIndex] = (state.userAnswers[qIndex] === kana) ? null : kana;
+      renderWordbank();
       renderQuestions();
       updateActionButtons();
     }
