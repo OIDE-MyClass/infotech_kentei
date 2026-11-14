@@ -165,10 +165,19 @@
         <p id="quiz-passage" class="text-slate-700 font-medium leading-loose text-sm md:text-base whitespace-pre-wrap tracking-wide"></p>
       </div>
 
-      <!-- 解答群 -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-sm">
-        <h4 class="text-xs font-bold text-slate-400 mb-3 border-b pb-2">【解答群】</h4>
-        <div id="quiz-wordbank" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-3">
+      <!-- 解答群（スクロール追従） -->
+      <div id="quiz-wordbank-wrapper" class="sticky top-16 z-10 bg-white/95 backdrop-blur-sm p-3.5 md:p-4 rounded-xl border border-blue-200 mb-6 shadow-md transition-all">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-2.5">
+          <h4 class="text-xs font-bold text-blue-700 flex items-center gap-1.5">
+            <i data-lucide="pin" class="w-3.5 h-3.5"></i>
+            <span>【解答群】</span>
+          </h4>
+          <button type="button" onclick="toggleWordbank()" id="btn-toggle-wordbank" class="text-xs font-bold text-slate-500 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1">
+            <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+            <span>たたむ</span>
+          </button>
+        </div>
+        <div id="quiz-wordbank" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-2 max-h-36 sm:max-h-48 overflow-y-auto pr-1">
           <!-- JSで動的に生成 -->
         </div>
       </div>
@@ -225,7 +234,7 @@
 
   <script>
     // =========================================================================
-    // 🚨 ここにGASで取得した「ウェブアプリのURL（末尾が /exec）」を貼り付けます
+    // GASのウェブアプリURL（設定済み）
     // =========================================================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxLv8FLUrq6EgcnMjezL_JzK7x7RS1MCfoOAI9KTb2TMZgS846tocVCtmj5RFavva4Q/exec";
 
@@ -598,6 +607,11 @@
 
       // 解答群の描画
       const wordBankEl = document.getElementById('quiz-wordbank');
+      const toggleBtn = document.getElementById('btn-toggle-wordbank');
+      wordBankEl.classList.remove('hidden');
+      if (toggleBtn) {
+        toggleBtn.innerHTML = `<i data-lucide="chevron-up" class="w-3.5 h-3.5"></i><span>たたむ</span>`;
+      }
       wordBankEl.innerHTML = currentTask.wordBank.map((word, idx) => `
         <div class="flex items-start gap-1.5 text-sm md:text-base">
           <span class="font-bold text-blue-600 w-5 flex-shrink-0">${KANA_BANK[idx]}.</span>
@@ -608,6 +622,20 @@
       // 小問とボタンの描画
       renderQuestions();
       updateActionButtons();
+      lucide.createIcons();
+    }
+
+    // 解答群の折りたたみ切り替え
+    function toggleWordbank() {
+      const wordBankEl = document.getElementById('quiz-wordbank');
+      const toggleBtn = document.getElementById('btn-toggle-wordbank');
+      const isHidden = wordBankEl.classList.toggle('hidden');
+
+      if (isHidden) {
+        toggleBtn.innerHTML = `<i data-lucide="chevron-down" class="w-3.5 h-3.5"></i><span>開く</span>`;
+      } else {
+        toggleBtn.innerHTML = `<i data-lucide="chevron-up" class="w-3.5 h-3.5"></i><span>たたむ</span>`;
+      }
       lucide.createIcons();
     }
 
