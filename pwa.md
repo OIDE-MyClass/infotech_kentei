@@ -1,0 +1,18 @@
+{
+  "name": "情報技術検定 語句問題",
+  "short_name": "情報技術検定",
+  "description": "スキマ時間で合格を目指す情報技術検定の語句問題演習アプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
