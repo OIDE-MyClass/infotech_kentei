@@ -8,6 +8,18 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>情報技術検定 語句問題</title>
+
+  <!-- PWA（スマホのホーム画面追加・WebPush対応）設定 -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="情報技術検定">
+  <link rel="apple-touch-icon" href="./icon.svg">
+
+  <!-- OneSignal Web SDK v16 -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -84,7 +96,7 @@
     </div>
 
     <!-- 3. ホーム画面 -->
-    <div id="view-home" class="hidden max-w-3xl mx-auto space-y-8 animate-fade-in">
+    <div id="view-home" class="hidden max-w-3xl mx-auto space-y-6 animate-fade-in">
       <div class="text-center py-6 bg-blue-50 rounded-2xl border border-blue-100">
         <h2 class="text-xl font-bold text-blue-800 mb-2">スキマ時間で合格を目指そう！</h2>
         <p class="text-sm text-blue-600 px-4 leading-relaxed">
@@ -93,8 +105,13 @@
         </p>
       </div>
 
+      <!-- 学習リマインダー通知（OneSignal WebPush）カード -->
+      <div id="push-notification-card" class="hidden bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <!-- JSで端末・許可状態に応じて表示を自動生成 -->
+      </div>
+
       <!-- 実力テスト（力試し） -->
-      <div id="mock-test-section" class="space-y-3">
+      <div id="mock-test-section" class="space-y-3 pt-1">
         <h3 class="font-bold text-slate-500 text-sm px-2">実力テスト</h3>
         <button onclick="startMockTest()" class="w-full relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-2xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all group text-left flex items-center justify-between">
           <div class="absolute top-0 right-0 p-4 opacity-10 transform translate-x-4 -translate-y-4 group-hover:scale-110 transition-transform pointer-events-none">
@@ -114,7 +131,7 @@
       </div>
 
       <!-- 分野別カテゴリ一覧 -->
-      <div class="space-y-4">
+      <div class="space-y-4 pt-1">
         <h3 class="font-bold text-slate-500 text-sm px-2">分野別に学習する</h3>
         <div id="category-list" class="grid gap-4 md:grid-cols-2">
           <!-- JSで動的に生成 -->
@@ -253,9 +270,160 @@
 
   <script>
     // =========================================================================
-    // GASのウェブアプリURL（設定済み）
+    // 1. GASのウェブアプリURL（設定済み）
     // =========================================================================
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxLv8FLUrq6EgcnMjezL_JzK7x7RS1MCfoOAI9KTb2TMZgS846tocVCtmj5RFavva4Q/exec";
+
+    // =========================================================================
+    // 2. OneSignal の App ID（ご自身のApp IDに書き換えてください）
+    // =========================================================================
+    const ONESIGNAL_APP_ID = "YOUR_ONESIGNAL_APP_ID";
+
+    // OneSignal 初期化（GitHub Pagesのサブディレクトリ公開にも自動対応）
+    let oneSignalInstance = null;
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+    if (ONESIGNAL_APP_ID && ONESIGNAL_APP_ID !== "YOUR_ONESIGNAL_APP_ID") {
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          // 現在のURLからベースパス（例: "/repo-name/" または "/"）を自動取得
+          const basePath = window.location.pathname.replace(/\/[^/]*$/, '/');
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            serviceWorkerParam: { scope: basePath },
+            serviceWorkerPath: basePath + "OneSignalSDKWorker.js",
+            notifyButton: { enable: false }
+          });
+          oneSignalInstance = OneSignal;
+          renderPushNotificationCard();
+
+          OneSignal.Notifications.addEventListener("permissionChange", () => {
+            renderPushNotificationCard();
+          });
+        } catch (err) {
+          console.error("OneSignal init error:", err);
+        }
+      });
+    }
+
+    // 端末判定（iOS / PWAスタンドアロンモード）
+    function isIosDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function isStandaloneMode() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    // ホーム画面の「学習リマインダー通知」カードの描画
+    function renderPushNotificationCard() {
+      const cardEl = document.getElementById('push-notification-card');
+      if (!cardEl) return;
+
+      // App ID未設定時は非表示
+      if (!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID") {
+        cardEl.classList.add('hidden');
+        return;
+      }
+
+      cardEl.classList.remove('hidden');
+
+      // iPhone/iPadでブラウザから直接開いている場合（ホーム画面未追加）
+      if (isIosDevice() && !isStandaloneMode()) {
+        cardEl.innerHTML = `
+          <div class="flex items-start gap-3.5">
+            <div class="bg-amber-100 text-amber-600 p-2.5 rounded-xl flex-shrink-0 mt-0.5">
+              <i data-lucide="smartphone" class="w-6 h-6"></i>
+            </div>
+            <div class="text-left">
+              <p class="font-bold text-slate-800 text-sm md:text-base">iPhoneで学習リマインダーを受け取るには</p>
+              <p class="text-xs md:text-sm text-slate-600 mt-1 leading-relaxed">
+                画面下（または右上）の <span class="inline-flex items-center px-1.5 py-0.5 bg-slate-100 rounded font-bold text-slate-700">共有ボタン（□↑）</span> を押し、<span class="font-bold text-blue-600">「ホーム画面に追加」</span> からアプリを開くと通知をオンにできます！
+              </p>
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // 通知API非対応ブラウザの場合
+      if (!("Notification" in window)) {
+        cardEl.classList.add('hidden');
+        return;
+      }
+
+      const permission = Notification.permission; // 'default' | 'granted' | 'denied'
+
+      if (permission === 'granted') {
+        cardEl.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="bg-green-100 text-green-600 p-2.5 rounded-xl flex-shrink-0">
+                <i data-lucide="bell-ring" class="w-6 h-6"></i>
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-slate-800 text-sm md:text-base">学習リマインダー通知：ON</p>
+                <p class="text-xs text-slate-500">毎日の学習タイミングでお知らせが届きます</p>
+              </div>
+            </div>
+            <span class="text-xs font-bold text-green-700 bg-green-100 px-3 py-1.5 rounded-full flex-shrink-0">有効</span>
+          </div>
+        `;
+      } else if (permission === 'denied') {
+        cardEl.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="bg-slate-100 text-slate-500 p-2.5 rounded-xl flex-shrink-0">
+              <i data-lucide="bell-off" class="w-6 h-6"></i>
+            </div>
+            <div class="text-left">
+              <p class="font-bold text-slate-700 text-sm">通知がブロックされています</p>
+              <p class="text-xs text-slate-500 mt-0.5">リマインダーを受け取るには、スマホやブラウザのサイト設定から通知を「許可」に変更してください。</p>
+            </div>
+          </div>
+        `;
+      } else {
+        // 未設定（default）：通知許可ボタンを表示
+        cardEl.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="bg-blue-100 text-blue-600 p-2.5 rounded-xl flex-shrink-0">
+                <i data-lucide="bell" class="w-6 h-6"></i>
+              </div>
+              <div class="text-left">
+                <p class="font-bold text-slate-800 text-sm md:text-base">毎日の学習リマインダーを受け取る</p>
+                <p class="text-xs text-slate-500">スキマ時間の復習タイミングをお知らせします</p>
+              </div>
+            </div>
+            <button type="button" onclick="requestPushPermission()" class="w-full sm:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold rounded-xl shadow-sm transition-all active:scale-95 flex-shrink-0">
+              通知をオンにする
+            </button>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    // 通知許可リクエスト実行
+    async function requestPushPermission() {
+      try {
+        if (oneSignalInstance) {
+          await oneSignalInstance.Notifications.requestPermission();
+        } else if ("Notification" in window) {
+          await Notification.requestPermission();
+        }
+      } catch (err) {
+        console.error("Push permission error:", err);
+      } finally {
+        renderPushNotificationCard();
+      }
+    }
+
+    // =========================================================================
+    // 3. クイズアプリのメインロジック
+    // =========================================================================
 
     // 解答記号の一覧
     const KANA_BANK = ['ア', 'イ', 'ウ', 'エ', 'オ', 'カ', 'キ', 'ク', 'ケ', 'コ', 'サ', 'シ', 'ス', 'セ', 'ソ', 'タ', 'チ', 'ツ', 'テ', 'ト'];
@@ -428,6 +596,8 @@
 
     // --- ホーム画面の描画 ---
     function renderHome() {
+      renderPushNotificationCard();
+
       const categoryListEl = document.getElementById('category-list');
       const mockSectionEl = document.getElementById('mock-test-section');
       const categories = Object.keys(state.quizData || {});
